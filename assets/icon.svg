@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background circle - Tailscale brand dark -->
+  <circle cx="32" cy="32" r="31" fill="#1a1f36"/>
+
+  <!-- Tailscale constellation / mesh network (top-left region) -->
+  <!-- Outer ring nodes -->
+  <circle cx="20" cy="12" r="3.5" fill="#4f8ef7"/>
+  <circle cx="38" cy="10" r="3.5" fill="#4f8ef7"/>
+  <circle cx="52" cy="20" r="3.5" fill="#4f8ef7"/>
+  <circle cx="52" cy="36" r="3.5" fill="#4f8ef7"/>
+  <!-- Center node -->
+  <circle cx="36" cy="24" r="4.5" fill="#7eb3ff"/>
+  <!-- Connections -->
+  <line x1="20" y1="12" x2="36" y2="24" stroke="#4f8ef7" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="38" y1="10" x2="36" y2="24" stroke="#4f8ef7" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="52" y1="20" x2="36" y2="24" stroke="#4f8ef7" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="52" y1="36" x2="36" y2="24" stroke="#4f8ef7" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="20" y1="12" x2="38" y2="10" stroke="#4f8ef7" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="38" y1="10" x2="52" y2="20" stroke="#4f8ef7" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="52" y1="20" x2="52" y2="36" stroke="#4f8ef7" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Tux - Linux penguin (bottom-right, foreground) -->
+  <!-- Drop shadow -->
+  <ellipse cx="35" cy="62" rx="12" ry="2.5" fill="#000" opacity="0.3"/>
+  <!-- Body (black) -->
+  <ellipse cx="34" cy="52" rx="11" ry="13" fill="#1a1a1a"/>
+  <!-- White belly -->
+  <ellipse cx="34" cy="54" rx="7" ry="9" fill="#f5f5f0"/>
+  <!-- Head -->
+  <circle cx="34" cy="38" r="10" fill="#1a1a1a"/>
+  <!-- Face white patch -->
+  <ellipse cx="34" cy="40" rx="6.5" ry="5" fill="#f5f5f0"/>
+  <!-- Left eye -->
+  <circle cx="30.5" cy="36.5" r="2.5" fill="white"/>
+  <circle cx="31" cy="37" r="1.2" fill="#111"/>
+  <circle cx="30.5" cy="36.3" r="0.4" fill="white"/>
+  <!-- Right eye -->
+  <circle cx="37.5" cy="36.5" r="2.5" fill="white"/>
+  <circle cx="38" cy="37" r="1.2" fill="#111"/>
+  <circle cx="37.5" cy="36.3" r="0.4" fill="white"/>
+  <!-- Beak (orange) -->
+  <ellipse cx="34" cy="41.5" rx="3" ry="1.8" fill="#f5a623"/>
+  <line x1="31" y1="41.5" x2="37" y2="41.5" stroke="#d4881a" stroke-width="0.8"/>
+  <!-- Left wing -->
+  <ellipse cx="23" cy="51" rx="4" ry="9" fill="#1a1a1a" transform="rotate(-10,23,51)"/>
+  <!-- Right wing -->
+  <ellipse cx="45" cy="51" rx="4" ry="9" fill="#1a1a1a" transform="rotate(10,45,51)"/>
+  <!-- Left foot -->
+  <ellipse cx="29" cy="63.5" rx="5" ry="2" fill="#f5a623" transform="rotate(-10,29,63.5)"/>
+  <!-- Right foot -->
+  <ellipse cx="39" cy="63.5" rx="5" ry="2" fill="#f5a623" transform="rotate(10,39,63.5)"/>
+</svg>
