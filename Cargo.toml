@@ -8,7 +8,7 @@ repository = "https://github.com/dfrederick15/tuxscale"
 keywords = ["tailscale", "vpn", "gui", "tray", "linux"]
 categories = ["gui", "network-programming", "command-line-utilities"]
 readme = "README.md"
-exclude = ["assets/icon.png", "MEMORY.md"]
+exclude = ["assets/icon.png", "MEMORY.md", "SESSION_*.md"]
 
 [[bin]]
 name = "tuxscale"
