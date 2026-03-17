@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 fn main() {
     let svg_path = PathBuf::from("assets/icon.svg");
-    let png_path = PathBuf::from("assets/icon.png");
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let png_path = out_dir.join("icon.png");
 
     println!("cargo:rerun-if-changed=assets/icon.svg");
 
@@ -23,6 +24,4 @@ fn main() {
 
     resvg::render(&tree, transform, &mut pixmap.as_mut());
     pixmap.save_png(&png_path).expect("failed to write icon.png");
-
-    println!("cargo:warning=icon rendered to {}", png_path.display());
 }

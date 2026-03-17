@@ -3,7 +3,7 @@ use tray_icon::{
     menu::{Menu, MenuEvent, MenuId, MenuItem},
 };
 
-const ICON_PNG: &[u8] = include_bytes!("../assets/icon.png");
+const ICON_PNG: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icon.png"));
 
 pub struct Tray {
     // Kept alive for process lifetime; must not be dropped.
