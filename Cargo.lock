@@ -3801,6 +3801,7 @@ dependencies = [
 name = "tuxscale"
 version = "0.1.0"
 dependencies = [
+ "gtk",
  "iced",
  "image",
  "resvg",

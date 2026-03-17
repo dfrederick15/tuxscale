@@ -17,6 +17,9 @@ fn main() -> iced::Result {
         unsafe { std::env::set_var("WGPU_BACKEND", "gl") };
     }
 
+    // GTK must be initialised before the tray icon is created.
+    gtk::init().expect("failed to initialize GTK");
+
     // Tray must live for the duration of the process.
     // TrayIcon is !Send so it stays here on the main thread.
     let t = tray::init();
