@@ -25,6 +25,33 @@ pub fn view(state: &TsState) -> Element<'_, Message> {
         .on_press(Message::LoadPrefs)
         .style(iced::widget::button::secondary);
 
+    // Only show Install button if not already on PATH
+    let install_row: Option<Element<Message>> = if !crate::is_on_path() {
+        let install_btn = button(text("Install to PATH").size(13))
+            .on_press(Message::InstallToPath)
+            .style(iced::widget::button::primary);
+
+        let status_text: Element<Message> = match &state.install_status {
+            Some(s) => text(s.as_str())
+                .size(12)
+                .color(iced::Color::from_rgb(0.3, 0.7, 0.3))
+                .into(),
+            None => iced::widget::Space::new().into(),
+        };
+
+        Some(
+            column![
+                text("Not installed to PATH").size(12).color(iced::Color::from_rgb(0.6, 0.6, 0.6)),
+                row![install_btn, status_text].spacing(12),
+            ]
+            .spacing(4)
+            .padding([8, 0])
+            .into(),
+        )
+    } else {
+        None
+    };
+
     container(
         column![
             toggle_row(
@@ -74,6 +101,7 @@ pub fn view(state: &TsState) -> Element<'_, Message> {
                 reload_btn,
             ],
         ]
+        .extend(install_row)
         .spacing(4)
         .padding(16),
     )

@@ -13,7 +13,9 @@ pub static QUIT_ID: OnceLock<MenuId> = OnceLock::new();
 
 fn main() -> iced::Result {
     if std::env::args().any(|a| a == "--install") {
-        return install();
+        install().expect("install failed");
+        println!("\nYou can now run 'tuxscale' from the command line.");
+        std::process::exit(0);
     }
 
     // Vulkan is unavailable in this environment; fall back to OpenGL.
@@ -44,36 +46,34 @@ fn main() -> iced::Result {
         .run()
 }
 
-fn install() -> iced::Result {
+pub fn install() -> std::io::Result<()> {
     use std::fs;
     use std::path::PathBuf;
 
-    let current_exe = std::env::current_exe().expect("cannot determine current executable path");
-
+    let current_exe = std::env::current_exe()?;
     let home = std::env::var("HOME").expect("HOME not set");
+
     let local_bin = PathBuf::from(&home).join(".local/bin");
     let desktop_dir = PathBuf::from(&home).join(".local/share/applications");
     let icon_dir = PathBuf::from(&home).join(".local/share/icons");
 
-    fs::create_dir_all(&local_bin).ok();
-    fs::create_dir_all(&desktop_dir).ok();
-    fs::create_dir_all(&icon_dir).ok();
+    fs::create_dir_all(&local_bin)?;
+    fs::create_dir_all(&desktop_dir)?;
+    fs::create_dir_all(&icon_dir)?;
 
     // Symlink binary into ~/.local/bin
     let bin_link = local_bin.join("tuxscale");
     if bin_link.exists() || bin_link.symlink_metadata().is_ok() {
-        fs::remove_file(&bin_link).ok();
+        fs::remove_file(&bin_link)?;
     }
-    std::os::unix::fs::symlink(&current_exe, &bin_link)
-        .expect("failed to create symlink in ~/.local/bin");
+    std::os::unix::fs::symlink(&current_exe, &bin_link)?;
 
     // Write icon PNG
     let icon_bytes = include_bytes!(concat!(env!("OUT_DIR"), "/icon.png"));
-    let icon_path = icon_dir.join("tuxscale.png");
-    fs::write(&icon_path, icon_bytes).expect("failed to write icon");
+    fs::write(icon_dir.join("tuxscale.png"), icon_bytes)?;
 
     // Write .desktop entry
-    let desktop_contents = format!(
+    let desktop = format!(
         "[Desktop Entry]\n\
          Name=Tuxscale\n\
          Comment=A native Linux GUI for the Tailscale VPN client\n\
@@ -87,14 +87,18 @@ fn install() -> iced::Result {
          StartupWMClass=tuxscale\n",
         exe = current_exe.display()
     );
-    let desktop_path = desktop_dir.join("tuxscale.desktop");
-    fs::write(&desktop_path, desktop_contents).expect("failed to write .desktop file");
+    fs::write(desktop_dir.join("tuxscale.desktop"), desktop)?;
 
     println!("Tuxscale installed:");
-    println!("  Binary  → {}", bin_link.display());
-    println!("  Icon    → {}", icon_path.display());
-    println!("  Menu    → {}", desktop_path.display());
-    println!("\nYou can now run 'tuxscale' from the command line.");
+    println!("  Binary → {}", bin_link.display());
 
-    std::process::exit(0);
+    Ok(())
+}
+
+/// Returns true if `tuxscale` is already reachable on PATH.
+pub fn is_on_path() -> bool {
+    std::env::var("PATH")
+        .unwrap_or_default()
+        .split(':')
+        .any(|dir| std::path::Path::new(dir).join("tuxscale").exists())
 }

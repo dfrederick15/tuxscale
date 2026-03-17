@@ -20,6 +20,7 @@ pub struct TsState {
     pub netcheck_report: Option<NetcheckReport>,
     pub netcheck_running: bool,
     pub prefs: Option<Prefs>,
+    pub install_status: Option<String>,
     pub last_error: Option<String>,
 }
 
@@ -70,6 +71,8 @@ pub enum Message {
     PrefsLoaded(Result<Prefs, String>),
     SetOption(String, bool),
     OptionSet(Result<(), String>),
+    InstallToPath,
+    InstallDone(Result<(), String>),
     // tabs
     SetTab(Tab),
     // window
@@ -245,6 +248,21 @@ impl App {
                     self.state.last_error = Some(e);
                 }
                 Task::perform(tailscale::prefs(), Message::PrefsLoaded)
+            }
+
+            Message::InstallToPath => {
+                Task::perform(
+                    async { crate::install().map_err(|e| e.to_string()) },
+                    Message::InstallDone,
+                )
+            }
+
+            Message::InstallDone(result) => {
+                match result {
+                    Ok(()) => self.state.install_status = Some("Installed successfully.".into()),
+                    Err(e) => self.state.install_status = Some(format!("Install failed: {e}")),
+                }
+                Task::none()
             }
 
             Message::SetTab(tab) => {
