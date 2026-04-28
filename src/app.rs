@@ -82,6 +82,8 @@ pub enum Message {
     TrayEvent,
     // timer
     Tick,
+    // quit
+    Quit,
 }
 
 // ── iced::Application impl ────────────────────────────────────────────────────
@@ -281,9 +283,14 @@ impl App {
             }
 
             Message::WindowCloseRequest(id) => {
-                // Hide to tray instead of closing
+                // On Wayland, set_visible(false) is a no-op — close and re-open instead.
                 self.window_visible = false;
-                window::set_mode(id, window::Mode::Hidden)
+                self.window_id = None;
+                window::close(id)
+            }
+
+            Message::Quit => {
+                return iced::exit();
             }
 
             Message::TrayEvent => {
@@ -292,15 +299,22 @@ impl App {
                         return iced::exit();
                     }
                     if Some(&id) == crate::SHOW_ID.get() {
-                        if let Some(win_id) = self.window_id {
-                            let mode = if self.window_visible {
+                        if self.window_visible {
+                            if let Some(win_id) = self.window_id {
                                 self.window_visible = false;
-                                window::Mode::Hidden
-                            } else {
-                                self.window_visible = true;
-                                window::Mode::Windowed
-                            };
-                            return window::set_mode(win_id, mode);
+                                self.window_id = None;
+                                return window::close(win_id);
+                            }
+                        } else {
+                            let (new_id, task) = window::open(window::Settings {
+                                size: iced::Size::new(720.0, 520.0),
+                                min_size: Some(iced::Size::new(500.0, 380.0)),
+                                exit_on_close_request: false,
+                                ..Default::default()
+                            });
+                            self.window_id = Some(new_id);
+                            self.window_visible = true;
+                            return task.discard();
                         }
                     }
                 }
@@ -315,8 +329,11 @@ impl App {
             tab_btn("Exit Nodes", matches!(self.tab, Tab::ExitNodes), Message::SetTab(Tab::ExitNodes)),
             tab_btn("Netcheck", matches!(self.tab, Tab::Netcheck), Message::SetTab(Tab::Netcheck)),
             tab_btn("Options", matches!(self.tab, Tab::Options), Message::SetTab(Tab::Options)),
+            iced::widget::Space::new().width(Length::Fill),
+            button(text("Quit").size(13)).on_press(Message::Quit).style(button::danger),
         ]
-        .spacing(4);
+        .spacing(4)
+        .align_y(iced::Alignment::Center);
 
         let content: Element<Message> = match self.tab {
             Tab::Peers => ui::peers::view(&self.state),
