@@ -40,6 +40,8 @@ pub struct App {
     tab: Tab,
     window_visible: bool,
     window_id: Option<window::Id>,
+    show_close_dialog: bool,
+    pending_close_id: Option<window::Id>,
 }
 
 // ── Messages ──────────────────────────────────────────────────────────────────
@@ -76,8 +78,8 @@ pub enum Message {
     // tabs
     SetTab(Tab),
     // window
-    GotWindowId(Option<window::Id>),
     WindowCloseRequest(window::Id),
+    HideToTray,
     // tray
     TrayEvent,
     // timer
@@ -90,17 +92,24 @@ pub enum Message {
 
 impl App {
     pub fn new() -> (Self, Task<Message>) {
+        let (window_id, open_task) = window::open(window::Settings {
+            size: iced::Size::new(720.0, 520.0),
+            min_size: Some(iced::Size::new(500.0, 380.0)),
+            exit_on_close_request: false,
+            ..Default::default()
+        });
         (
             Self {
                 state: TsState::default(),
                 tab: Tab::default(),
                 window_visible: true,
-                window_id: None,
+                window_id: Some(window_id),
+                show_close_dialog: false,
+                pending_close_id: None,
             },
             Task::batch([
+                open_task.discard(),
                 Task::perform(tailscale::status(), Message::StatusLoaded),
-                // Grab the main window ID once the event loop starts.
-                window::latest().map(|id| Message::GotWindowId(id)),
             ]),
         )
     }
@@ -277,16 +286,22 @@ impl App {
                 }
             }
 
-            Message::GotWindowId(id) => {
-                self.window_id = id;
+            Message::WindowCloseRequest(id) => {
+                self.show_close_dialog = true;
+                self.pending_close_id = Some(id);
                 Task::none()
             }
 
-            Message::WindowCloseRequest(id) => {
-                // On Wayland, set_visible(false) is a no-op — close and re-open instead.
-                self.window_visible = false;
-                self.window_id = None;
-                window::close(id)
+            Message::HideToTray => {
+                self.show_close_dialog = false;
+                if let Some(id) = self.pending_close_id.take() {
+                    // On Wayland, set_visible(false) is a no-op — close and re-open instead.
+                    self.window_visible = false;
+                    self.window_id = None;
+                    window::close(id)
+                } else {
+                    Task::none()
+                }
             }
 
             Message::Quit => {
@@ -294,6 +309,11 @@ impl App {
             }
 
             Message::TrayEvent => {
+                // Pump the GTK main loop so libayatana-appindicator can
+                // process D-Bus messages and keep the StatusNotifierItem registered.
+                while gtk::events_pending() {
+                    gtk::main_iteration_do(false);
+                }
                 while let Some(id) = tray::try_recv() {
                     if Some(&id) == crate::QUIT_ID.get() {
                         return iced::exit();
@@ -323,7 +343,7 @@ impl App {
         }
     }
 
-    pub fn view(&self) -> Element<'_, Message> {
+    pub fn view(&self, _window: window::Id) -> Element<'_, Message> {
         let tab_bar = row![
             tab_btn("Peers", matches!(self.tab, Tab::Peers), Message::SetTab(Tab::Peers)),
             tab_btn("Exit Nodes", matches!(self.tab, Tab::ExitNodes), Message::SetTab(Tab::ExitNodes)),
@@ -342,7 +362,7 @@ impl App {
             Tab::Options => ui::options::view(&self.state),
         };
 
-        container(
+        let main: Element<Message> = container(
             column![
                 ui::dashboard::view(&self.state),
                 tab_bar,
@@ -367,7 +387,57 @@ impl App {
         )
         .width(Length::Fill)
         .height(Length::Fill)
-        .into()
+        .into();
+
+        if self.show_close_dialog {
+            let dialog: Element<Message> = container(
+                column![
+                    text("Close Tuxscale?").size(15),
+                    text("Keep it running in the system tray, or quit entirely.")
+                        .size(12)
+                        .color(iced::Color::from_rgb(0.6, 0.6, 0.6)),
+                    row![
+                        button(text("Minimize to Tray").size(13))
+                            .on_press(Message::HideToTray)
+                            .style(button::secondary),
+                        button(text("Quit").size(13))
+                            .on_press(Message::Quit)
+                            .style(button::danger),
+                    ]
+                    .spacing(8),
+                ]
+                .spacing(12)
+                .padding(24),
+            )
+            .style(|theme: &Theme| {
+                let palette = theme.palette();
+                iced::widget::container::Style {
+                    background: Some(iced::Background::Color(palette.background)),
+                    border: iced::Border {
+                        color: iced::Color::from_rgb(0.5, 0.5, 0.5),
+                        width: 1.0,
+                        radius: 8.0.into(),
+                    },
+                    ..Default::default()
+                }
+            })
+            .into();
+
+            let backdrop: Element<Message> = container(dialog)
+                .center_x(Length::Fill)
+                .center_y(Length::Fill)
+                .style(|_| iced::widget::container::Style {
+                    background: Some(iced::Background::Color(iced::Color::from_rgba(
+                        0.0, 0.0, 0.0, 0.45,
+                    ))),
+                    ..Default::default()
+                })
+                .into();
+
+            iced::widget::stack([main, backdrop]).into()
+        } else {
+            main
+        }
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
@@ -380,7 +450,7 @@ impl App {
         ])
     }
 
-    pub fn theme(&self) -> Theme {
+    pub fn theme(&self, _window: window::Id) -> Theme {
         Theme::TokyoNight
     }
 }

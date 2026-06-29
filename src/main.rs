@@ -33,16 +33,10 @@ fn main() -> iced::Result {
     QUIT_ID.set(t.quit_id.clone()).ok();
     let _tray = t._icon; // keep alive
 
-    iced::application(App::new, App::update, App::view)
+    iced::daemon(App::new, App::update, App::view)
         .subscription(App::subscription)
         .theme(App::theme)
-        .title(|_: &App| "Tuxscale".to_string())
-        .window(iced::window::Settings {
-            size: iced::Size::new(720.0, 520.0),
-            min_size: Some(iced::Size::new(500.0, 380.0)),
-            exit_on_close_request: false, // hide to tray instead
-            ..Default::default()
-        })
+        .title(|_: &App, _| "Tuxscale".to_string())
         .run()
 }
 
